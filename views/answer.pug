@@ -1,0 +1,31 @@
+extends layout
+
+block content
+    nav.navbar.navbar-fixed-top.navbar-inverse
+        div.container
+            a(href="/").navbar-brand Question bank database
+            ul.nav.navbar-nav.navbar-right
+                li
+                    a(href='/') home
+                li
+                    a(href='/addQuestion') publish
+                li
+                    a(href='/help') how to
+                li
+                    a(href='#') [ #{user} ]
+
+    div.container.content
+        div.question #{data['0']['q_str']}
+        div.answer #{data['0']['ans_str']}
+
+        hr
+
+        if appeared.length > 0
+            h5.text-left appeared in 
+            for e in appeared
+                span.concept #{e}
+        hr
+        div
+            p.text-center published by 
+                b #{data['0']['fname']+' '+data['0']['lname']} 
+        hr

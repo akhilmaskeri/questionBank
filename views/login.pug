@@ -1,0 +1,29 @@
+extends layout
+
+block content
+    nav.navbar.navbar-default.navbar-fixed-top.navbar-inverse
+        div.container
+            a(href="/").navbar-brand Question bank
+
+
+    div.container.content
+        .row
+            .col-md-3
+            div.col-md-6
+                h3 log in
+                br
+                form#user-login.text-center(method="post",action="/login")
+                    input.form-control(type="email",placeholder="email ID",name='email')
+                    br
+                    input.form-control(type="password",placeholder="password",name='password')
+                    br
+                    div.text-right
+                        button.btn.btn-primary(type="submit")
+                            span log in
+                if failed == true
+                    br
+                    p.alert.alert-danger.text-center email ID or password is incorrect !
+                div
+                    a(href='/users/signup')
+                        h5 or create a new account
+            div.col-md-3

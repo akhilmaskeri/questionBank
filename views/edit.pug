@@ -1,0 +1,40 @@
+extends layout
+
+block content
+    nav.navbar.navbar-default.navbar-fixed-top.navbar-inverse
+        div.container
+            ul.nav.navbar-nav.navbar-right
+                li
+                    a(href='/') home
+                li
+                    a(href='/publish') publish
+                li 
+                    a(href='/help') how to
+                li 
+                    a(href='') [ #{user} ]
+
+    div.container.content
+         div.question-answers
+            if data.length > 0
+                each q in data
+                    div.row
+                        div.col-md-10
+                            a(href=`/getDetails?qid=${q['q_id']}`)
+                                div #{q['q_str']}
+                        .col-md-1
+                        .col-md-1
+                            button.btn.btn-danger(onclick=`window.location.href='/delete?qid=${q["q_id"]}'`)
+                                span delete
+                    hr
+                h5.text-center 
+                    a(href='/publish') publish another question
+                    span &emsp;|&emsp;
+                    a(href='/logout') logout
+            else
+                div.text-center(style='margin-top:30vh')
+                    p 
+                        b  hi #{user} ! 
+                        span you haven't published any questions yet
+                    br
+                    p 
+                        a(href='/publish') publish now!!

@@ -1,0 +1,51 @@
+extends layout
+
+block content
+    nav.navbar.navbar-fixed-top.navbar-inverse
+        div.container
+            a(href="/").navbar-brand Question bank database
+            ul.nav.navbar-nav.navbar-right
+                li
+                    a(href='/') home
+                li
+                    a(href='/publish') publish
+                li
+                    a(href='/help') how to
+                li
+                    a(href='/edit') [ #{user} ]
+
+    div.well
+        div.container.content  
+            div                        
+                div(style="padding-bottom:20px")
+                    form(method='get',action='/search')#search-form
+                        div.form-group
+                            div.input-group
+                                input.form-control(type='text',name='search',value=searchStr) 
+                                div.input-group-btn
+                                    button.btn.btn-default(type="submit")#search-btn
+                                        span search
+                            input#searchBy(type="hidden",value='concept',name='searchBy')
+                div
+                    div.btn-group
+                        button#concept-button.btn.btn-default(onclick="searchBy('concept')",class=(searchBy=='concept'?'active':'') ) concepts
+                        button#publisher-button.btn.btn-default(onclick="searchBy('publisher')",class=(searchBy=='publisher'?'active':'')) publisers
+                        button#exam-button.btn.btn-default(onclick="searchBy('exam')",class=(searchBy=='exam'?'active':'')) exam
+
+    if concepts && concepts.length > 0 
+        div.container
+            each c in concepts
+                div(style="float:left").concept #{c["c_str"]}
+        hr
+
+    div.container
+        div.question-answers
+            if data.length > 0
+                each q in data
+                    a(href=`/getDetails?qid=${q['q_id']}`)
+                        div.question #{q['q_str']}
+                        hr
+            else
+                div.text-center
+                    p no questions found on 
+                        b "#{searchStr}"

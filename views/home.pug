@@ -1,0 +1,38 @@
+extends layout
+
+block content
+    nav.navbar.navbar-default.navbar-fixed-top.navbar-inverse
+        div.container
+            ul.nav.navbar-nav.navbar-right
+                li.active
+                    a(href='/') home
+                li
+                    a(href='/publish') publish
+                li 
+                    a(href='/help') how to
+                li 
+                    a(href='/edit') [ #{user} ]
+
+    div.container.content
+        div.text-center
+            h1#title Question Bank
+
+        form#search-bar(method='get',action='/search')
+            div.col-md-1
+            div.form-group.col-md-10.row
+                div.input-group
+                    input.form-control(type='text',name='search',placeholder='search by concepts / exam code / publisher ')
+                    span.input-group-btn
+                        button.btn.btn-default(type="submit")#search-btn search
+                input(type="hidden",value='concept',name='searchBy')
+            div.col-md-1
+        div.row.container
+            div.text-center
+                div.btn-group
+                    button.btn.btn-default(onclick=`window.location.href='/publish'`)
+                        span publish
+                    button.btn.btn-default(onclick=`window.location.href='/edit'`)
+                        span your questions
+                    button.btn.btn-default(onclick=`window.location.href='/logout'`)
+                        span logout
+                
