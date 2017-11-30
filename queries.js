@@ -6,7 +6,8 @@ var options = {
 };
 
 var pgp = require('pg-promise')(options);
-var db = pgp('postgres://localhost:5432/qb');
+//var db = pgp('postgres://localhost:5432/qb');
+var db = pgp('postgres://lqjspduaxlkszl:08328935716b48894a775a23f8cf72a53c26f803ed3b8e5cd6fbfcf56b0eee98@ec2-23-21-155-53.compute-1.amazonaws.com:5432/d4gp5407cde8u6')
 
 module.exports = {
     register : registerUser,
