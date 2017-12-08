@@ -53,6 +53,9 @@
     font-size:120%;
 }
 
+.question a{
+    color:#333;
+}
 /* addQuestion */
 #answer{
     height:200px;

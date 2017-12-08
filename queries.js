@@ -125,7 +125,7 @@ function searchByConcepts(req,res,next){
         next(err);
     });
 
-    var queryString = `select q.q_id,q.q_str from qa q, concept c,tag t where c_str like '${req.query.search}%' and t.c_id=c.c_id and t.q_id=q.q_id `;
+    var queryString = `select q.q_id, q.q_str from qa q, concept c,tag t where c_str like '${req.query.search}%' and t.c_id=c.c_id and t.q_id=q.q_id group by q.q_id`;
     
     db.any(queryString)
         .then(function(data){
