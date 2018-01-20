@@ -6,23 +6,36 @@ var options = {
 };
 
 var pgp = require('pg-promise')(options);
-//var db = pgp('postgres://localhost:5432/qb');
-var db = pgp('postgres://lqjspduaxlkszl:08328935716b48894a775a23f8cf72a53c26f803ed3b8e5cd6fbfcf56b0eee98@ec2-23-21-155-53.compute-1.amazonaws.com:5432/d4gp5407cde8u6')
+var db = pgp('postgres://localhost:5432/questionbank');
 
 module.exports = {
     register : registerUser,
     login : login,
-    details : getDetails,
+
+    home : home,
+
+    search : search,
+    
     addQuestion : addQuestion,
-    deleteQuestion : deleteQuestion, 
-    searchByConcepts : searchByConcepts,
-    searchByPublisher :searchByPublisher,
-    searchByExam : searchByExam,
+    deleteQuestion : deleteQuestion,
+    getAnswers : getAnswers,
+    addAnswer : addAnswer,
+    
     getCurrentUserQuestions : getCurrentUserQuestions,
+    getAllTopics : getAllTopics,
+    
+    followConcept : followConcept,
+    unfollowConcept : unfollowConcept,
+
+    previewUser : previewUser,
+    followProfile : followProfile,
+    unfollowProfile : unfollowProfile,
 }
 
-// user functions
 
+//  - [ ] sanitization of data
+
+// user functions
 function registerUser(req,res,next){
 
     db.any(`select count(*) from users where email='${req.body.email}'`)
@@ -33,7 +46,7 @@ function registerUser(req,res,next){
             else{
                 db.any(`insert into users(fname,lname,email,password) values ('${req.body.fname}','${req.body.lname}','${req.body.email}','${req.body.password}')`)
                 .then(function(data){
-                    res.redirect('/users/login')
+                    res.redirect('/users/login');
                 })
                 .catch(function(err){
                     return next(err);
@@ -69,123 +82,199 @@ function login(req,res,next){
 
 }
 
+function home(req,res,next){
 
-// questions
-
-function getDetails(req,res,next){
-
-        var appeared = []
-        var queryString = `select e.e_code from exam e,qa q,appear a where q.q_id=${req.query.qid} and q.q_id=a.q_id and a.e_id = e.e_id`
-        db.any(queryString)
-            .then(function(data){
-                data.forEach(function(e){
-                    appeared.push(e['e_code']);
-                });
-            })
-            .catch(function(err){
-                next(err);
-            });
-
-        var queryString = `select q.q_str,q.ans_str,fname,lname from qa q,users u where q.q_id=${req.query.qid} and q.pub_id=u.u_id`
-        db.any(queryString)
-            .then(function(data){
-                res.render('answer',{data:data,user:req.session.user,appeared:appeared});
-            })
-            .catch(function(err){
-                next(err);                
-            });
-}
-
-
-// search functions
-
-function searchByPublisher(req,res,next){
-
-    var queryString = `select q.q_id,q.q_str from qa q,users u where q.pub_id = u.u_id and u.fname like '${req.query.search}';`;
-    
-    db.any(queryString)
+    db.any(`select c_str from concept , intrested_in where user_id=${req.session.u_id} and concept=c_id limit 10`)
+    .then(function(interest){
+       
+        db.any(`select fname,lname from users,follows where user_id='${req.session.u_id}' and u_id=follows;`)
         .then(function(data){
-            res.render('result',{searchStr:req.query.search,data:data,user:req.session.user,searchBy:req.query.searchBy});
+            res.render('home',{ user : req.session.user , interests : interest , following : data });
         })
         .catch(function(err){
-            return next(err);
-        })
+            next(err);
+        });
+
+    })
+    .catch(function(err){
+        res.send(err);
+    });
+
 }
 
-function searchByConcepts(req,res,next){
+// ask question
+function addQuestion(req,res,next){
 
-    var getSimilarConcept = `select c_str from concept where c_str like '${req.query.search}%'`;
-    var similarConcepts;
+    if(req.session.user){
 
-    db.any(getSimilarConcept)
+        db.any(`select addQuestion(${req.session.u_id},'${req.body.q_str.trim()}','${req.body.tags.trim()}');`)
+        .then(function(data){
+            res.render('publish',{user:req.session.user,added:true});
+        })
+        .catch(function(err){
+            res.send('error while publishing <br/>'+err)
+        })
+    }
+    else
+        res.redirect('/login');
+}
+
+// answer question
+function addAnswer(req,res,next){
+
+    var query = `insert into answers (q_id,ans_str,ans_date,ans_auth) values (${req.body.q_id},'${req.body.ans_str.trim()}',now(),${req.session.u_id})`;
+    db.any(query)
     .then(function(data){
-        similarConcepts= data;         
+        req.query.q_id = req.body.q_id;
+        return getAnswers(req,res,next);
+    })
+    .catch(function(err){
+        next(err)
+    });
+}
+
+
+function getAnswers(req,res,next){
+
+    var query=`select ans_id,ans_str,u_id,fname,lname from answers a,users where a.q_id=${req.query.q_id} and ans_auth=u_id order by ans_date;`;
+    db.any(query)
+    .then(function(answer){
+        db.any(`select q_id,q_str,q_auth,pub_date from questions where q_id=${req.query.q_id}`)
+        .then(function(question){
+            res.render('answer',{user:req.session.user,answers:answer,question:question}); 
+        })
+        .catch(function(err){
+            next(err)
+        });
+       
     })
     .catch(function(err){
         next(err);
     });
 
-    var queryString = `select q.q_id, q.q_str from qa q, concept c,tag t where c_str like '${req.query.search}%' and t.c_id=c.c_id and t.q_id=q.q_id group by q.q_id`;
-    
-    db.any(queryString)
-        .then(function(data){
-            res.render('result',{searchStr:req.query.search,data:data,concepts:similarConcepts,user:req.session.user,searchBy:req.query.searchBy});
-       })
-        .catch(function(err){
-            next(err);
-        });
-
-}
-
-function searchByExam(req,res,next){
-
-    var queryString = `select q.q_id,q.q_str from qa q,appear a,exam e where q.q_id=a.q_id and a.e_id = e.e_id and e.e_code='${req.query.search}'`;
-    db.any(queryString)
-        .then(function(data){
-            res.render('result',{searchStr:req.query.search,data:data,user:req.session.user,searchBy:req.query.searchBy});
-        }).catch(function(err){
-            next(err);
-        });
 }
 
 
-// add question
-function addQuestion(req,res,next){
 
-    if(req.session){
-        db.any(`select addQuestion(${req.session.u_id},'${req.body.q_str.trim()}','${req.body.ans_str.trim()}','${req.body.exam.trim()}','${req.body.tags.trim()}');`)
-        .then(function(data){
-            res.render('publish',{user:req.session.user});
+// search functions
+
+function search(req,res,next){
+
+    var getSimilarConcept = `select c_id,c_str,case when c_id in (select concept from intrested_in where user_id=${req.session.u_id}) then 1 else 0 end from concept where c_str like '%${req.query.search}%'`;
+    var getSimilarUsers = `select u_id,fname,lname from users where fname like '${req.query.search}';`;
+    var getSimilarQuestions = `select q.q_id, q.q_str from questions q where q_str like '%${req.query.search}%';`;
+
+    db.any(getSimilarConcept)
+    .then(function(concept){
+        
+        db.any(getSimilarUsers)
+        .then(function(profile){
+        
+            db.any(getSimilarQuestions)
+            .then(function(question){
+                res.render('result',{user:req.session.user,searchStr:req.query.search,concepts:concept,profiles:profile,questions:question});
+            })
+            .catch(function(err){
+                next(err);
+            });
+
         })
         .catch(function(err){
-            res.send('error while publishing')
-        })
-    }
-    else
-        res.redirect('/login');
+            next(err);
+        });
+    })
+    .catch(function(err){
+        next(err);
+    });
 
 }
 
 function getCurrentUserQuestions(req,res,next){
 
-    db.any(`select q_id,q_str,ans_str from qa where pub_id=${req.session.u_id}`)
+    db.any(`select q_id,q_str from questions where q_auth=${req.session.u_id}`)
     .then(function(data){
         res.render('edit',{user:req.session.user,data:data});
     })
     .catch(function(err){
-        res.send("error while fetching data");
+        res.send("error while fetching data <br/>"+err);
     });
 
 }
 
 function deleteQuestion(req,res,next){
 
-    db.any(`delete from qa where q_id=${req.query.qid}`)
-    .then(function(){
+    db.any(`delete from questions where q_id=${req.query.qid}`)
+    .then(function(data){
         res.redirect('/edit');
     })
-    .catch(function(){
-        res.send("error while deleting the message");
+    .catch(function(err){
+        res.send("error while deleting the question <br/>"+err);
+    });
+
+}
+
+function getAllTopics(req,res,next){
+    db.any(`select c_id,c_str,case when c_id in (select concept from intrested_in where user_id=${req.session.u_id}) then 1 else 0 end from concept`)
+    .then(function(data){
+        console.log(data.length)
+        res.render('topics',{user:req.session.user , data:data})
+    })
+    .catch(function(err){
+        res.send(err);
+    });
+}
+
+function followConcept(req,res,next){
+    db.any(`insert into intrested_in values ('${req.query.t}','${req.session.u_id}')`)
+    .then(function(data){
+        res.redirect('/alltopics');    
+    })
+    .catch(function(err){
+        res.send('error while following concept <br/>'+err);
+    });
+}
+
+function unfollowConcept(req,res,next){
+    db.any(`delete from intrested_in where user_id=${req.session.u_id} and concept=${req.query.t}`)
+    .then(function(data){
+        res.redirect('/alltopics');    
+    })
+    .catch(function(err){
+        res.send('error while unfollowing concept <br/>'+err);
+    });
+}
+
+function previewUser(req,res,next){
+    
+    db.any(`select u_id,fname,lname,case when exists (select * from follows where user_id=${req.session.u_id} and follows='${req.query.id}')then '1' else '0' end from users where u_id ='${req.query.id}'`)
+    .then(function(users){
+        res.render('user',{user:req.session.user,profile:users[0]});
+    })
+    .catch(function(err){
+        next(err);
+    });
+}
+
+function followProfile(req,res,next){
+
+    db.any(`insert into follows values (${req.session.u_id},${req.query.id})`)
+    .then(function(data){
+        previewUser(req,res,next);
+    })
+    .catch(function(err){
+        next(err);
+    });
+
+}
+
+function unfollowProfile(req,res,next){
+
+    db.any(`delete from follows where user_id=${req.session.u_id} and follows=${req.query.id} and not exists (select * from follows where user_id='${req.session.u_id}' and follows='${req.query.id}');`)
+    .then(function(data){
+        previewUser(req,res,next);
+    })
+    .catch(function(err){
+        next(err);
     });
 
 }

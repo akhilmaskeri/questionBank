@@ -1,0 +1,34 @@
+extends layout
+
+block content
+    nav.navbar.navbar-fixed-top.navbar-inverse
+        div.container
+            a(href="/").navbar-brand Question bank
+            ul.nav.navbar-nav.navbar-right
+                li
+                    a(href='/') home
+                li
+                    a(href='/publish') publish
+                li
+                    a(href='/help') how to
+                li
+                    a(href='/edit') [ #{user} ]
+
+    .container.content
+        
+        h2 #Topics
+        hr
+        div
+        if data.length > 0
+            each c in data
+                .row.container
+                    .col-md-6 #{c['c_str']}    
+                        hr
+                    .col-md-5
+                    .col-md-1
+                        if c['case'] == 0
+                            a(href=`/followTopic?t=${encodeURI(c['c_id'])}`).btn.btn-primary &emsp;follow&emsp;
+                        else
+                            a(href=`/unfollowTopic?t=${encodeURI(c['c_id'])}`).btn.btn-danger unfollow
+                    
+                

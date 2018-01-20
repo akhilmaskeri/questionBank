@@ -1,0 +1,30 @@
+extends layout
+
+block content
+    nav.navbar.navbar-default.navbar-fixed-top.navbar-inverse
+        div.container
+            a(href="/").navbar-brand Question bank
+            ul.nav.navbar-nav.navbar-right
+                li
+                    a(href='/') home
+                li
+                    a(href='/addQuestion') ask
+                li 
+                    a(href='/help') how to
+                li
+                    a(href='/edit') [ #{user} ]
+
+    div.container.content
+        div(style="width:60vw;margin:0 auto;")
+            form(method="post",action='/addAnswer')
+                div
+                    h4 #{q_str}
+                br
+                input(type="hidden",name='q_id',value=q_id)
+                div.form-group
+                    div.input-group.col-md-12
+                        label write answer
+                        textarea(style='height:200px').form-control(name="ans_str",placeholder="Type the answer here")#question.field
+                    br
+                    div.text-left
+                        input.btn.btn-primary(type="submit",value="publish")

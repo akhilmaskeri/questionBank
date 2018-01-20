@@ -3,36 +3,57 @@ extends layout
 block content
     nav.navbar.navbar-default.navbar-fixed-top.navbar-inverse
         div.container
+           a(href="/").navbar-brand Question bank
             ul.nav.navbar-nav.navbar-right
                 li.active
                     a(href='/') home
                 li
-                    a(href='/publish') publish
+                    a(href='/publish') ask
                 li 
                     a(href='/help') how to
                 li 
                     a(href='/edit') [ #{user} ]
 
     div.container.content
-        div.text-center
-            h1#title Question Bank
+        div.col-md-8
+            
+            form#search-bar(method='get',action='/search')
+                div.form-group.col-md-12.row
+                    div.input-group
+                        input.form-control(type='text',name='search',placeholder='search question bank ')
+                        span.input-group-btn
+                            button.btn.btn-default(type="submit")#search-btn search
+            hr
+                    
+        div.col-md-1
+        div#controls.col-md-3
+            div
+                .row
+                    span.col-md-1
+                    a.btn.btn-primary.col-md-4 publish 
+                    span.col-md-1
+                    a(href='/publish').btn.btn-primary.col-md-5 ask Question
+                    span.col-md-1
+                hr
+                div
+                    h4.text-center Topics You Follow
+                    div(style='text-indent:25px')
+                        if  interests.length > 0
+                            each d in interests
+                                p #{d['c_str']}
+                    hr        
+                    .text-center
+                        a(href='/alltopics').alert.alert-black manage your topics
+                    hr
+                div
+                    h4.text-center People you follow
+                    hr
+                    div.text-center
+                        if following.length > 0
+                            each f in following
+                                span.profile-name #{f['fname']} #{f['lname']}
+                            br
+                    
+                        
+                                
 
-        form#search-bar(method='get',action='/search')
-            div.col-md-1
-            div.form-group.col-md-10.row
-                div.input-group
-                    input.form-control(type='text',name='search',placeholder='search by concepts / exam code / publisher ')
-                    span.input-group-btn
-                        button.btn.btn-default(type="submit")#search-btn search
-                input(type="hidden",value='concept',name='searchBy')
-            div.col-md-1
-        div.row.container
-            div.text-center
-                div.btn-group
-                    button.btn.btn-default(onclick=`window.location.href='/publish'`)
-                        span publish
-                    button.btn.btn-default(onclick=`window.location.href='/edit'`)
-                        span your questions
-                    button.btn.btn-default(onclick=`window.location.href='/logout'`)
-                        span logout
-                

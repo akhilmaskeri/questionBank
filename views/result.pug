@@ -3,7 +3,7 @@ extends layout
 block content
     nav.navbar.navbar-fixed-top.navbar-inverse
         div.container
-            a(href="/").navbar-brand Question bank database
+            a(href="/").navbar-brand Question bank
             ul.nav.navbar-nav.navbar-right
                 li
                     a(href='/') home
@@ -17,35 +17,58 @@ block content
     div.well
         div.container.content  
             div                        
-                div(style="padding-bottom:20px")
+                div(style="padding-bottom:0px")
                     form(method='get',action='/search')#search-form
                         div.form-group
                             div.input-group
                                 input.form-control(type='text',name='search',value=searchStr) 
                                 div.input-group-btn
                                     button.btn.btn-default(type="submit")#search-btn
-                                        span search
-                            input#searchBy(type="hidden",value='concept',name='searchBy')
-                div
-                    div.btn-group
-                        button#concept-button.btn.btn-default(onclick="searchBy('concept')",class=(searchBy=='concept'?'active':'') ) concepts
-                        button#publisher-button.btn.btn-default(onclick="searchBy('publisher')",class=(searchBy=='publisher'?'active':'')) publisers
-                        button#exam-button.btn.btn-default(onclick="searchBy('exam')",class=(searchBy=='exam'?'active':'')) exam
+                                        span search question bank
 
-    if concepts && concepts.length > 0 
-        div.container
-            each c in concepts
-                div(style="float:left").concept #{c["c_str"]}
-        hr
-
-    div.container
-        div.question-answers
-            if data.length > 0
-                each q in data
-                    a(href=`/getDetails?qid=${q['q_id']}`)
-                        div.question #{q['q_str']}
-                        hr
-            else
-                div.text-center
-                    p no questions found on 
-                        b "#{searchStr}"
+    div.container-fluid
+        div.row            
+            div#questions.col-md-5
+                h4 questions
+                hr
+                if questions && questions.length > 0
+                    each q in questions
+                        a(href=`/getDetails?q_id=${q['q_id']}`)
+                            div #{q['q_str']}
+                else
+                    div
+                        p no questions found on 
+                            b "#{searchStr}"
+                br
+            div#concepts.col-md-3
+                h4 concepts
+                hr
+                if concepts && concepts.length > 0
+                    each c in concepts
+                        div.row
+                            div.col-md-6 #{c['c_str']}
+                            div.text-right.col-md-6
+                                if c['case'] == 0
+                                    a(href=`/followTopic?t=${encodeURI(c['c_id'])}`).btn.btn-primary f
+                                else
+                                    a(href=`/unfollowTopic?t=${encodeURI(c['c_id'])}`).btn.btn-danger u
+                            hr
+                else   
+                    div
+                        p no concepts found on 
+                            b "#{searchStr}"
+                br
+            div#profiles.col-md-3
+                h4 profiles
+                hr
+                
+                if profiles && profiles.length > 0
+                    each p in profiles
+                        a(href=`/userPreview?id=${encodeURI(p['u_id'])}`)
+                            span.profile-name #{p['fname']} #{p['lname']}   
+                        br
+                else   
+                    div
+                        p no profiles found on 
+                            b "#{searchStr}"
+                br

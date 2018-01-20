@@ -1,0 +1,23 @@
+extends layout
+
+block content
+    nav.navbar.navbar-fixed-top.navbar-inverse
+        div.container
+            a(href="/").navbar-brand Question bank
+            ul.nav.navbar-nav.navbar-right
+                li
+                    a(href='/') home
+                li
+                    a(href='/publish') publish
+                li
+                    a(href='/help') how to
+                li
+                    a(href='/edit') [ #{user} ]
+
+    div.content.container
+        .text-center
+            h2.profile-name(style='color:#666;') #{profile['fname']} #{profile['lname']} 
+            if profile['case'] == 0
+                a(href=`/followProfile?id=${encodeURI(profile['u_id'])}`) follow
+            else   
+                a(href=`/unfollowProfile?id=${encodeURI(profile['u_id'])}`) following

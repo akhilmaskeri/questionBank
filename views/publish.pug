@@ -3,45 +3,34 @@ extends layout
 block content
     nav.navbar.navbar-default.navbar-fixed-top.navbar-inverse
         div.container
-            a(href="/").navbar-brand Question bank database
+            a(href="/").navbar-brand Question bank
             ul.nav.navbar-nav.navbar-right
                 li
                     a(href='/') home
                 li.active
-                    a(href='/addQuestion') publish
+                    a(href='/addQuestion') ask
                 li 
                     a(href='/help') how to
                 li
                     a(href='/edit') [ #{user} ]
 
-
-
     div.container.content
         div(style="width:60vw;margin:0 auto;")
 
+            if added == true
+                .alert.alert-success
+                    p.text-center question successfully added 
+
             form(method="post",action='/addQuestion')#publish-question-form    
-
-                div.input-group
-                    h4.text-left(style="float:left") 
-                        label Publish A Question
-
                 br
                 div.form-group
                     div.input-group.col-md-12
-                        label Question
+                        label Ask Question
                         textarea.form-control(row=3,name="q_str",placeholder="Type the question here")#question.field
-                    br
-                    div.input-group.col-md-12
-                        label Answer
-                        textarea.form-control(row=4,name="ans_str",placeholder="Type the answer here")#answer.field
                     br
                     div.input-group.col-md-12
                         label.input-group-addon tags
                         input.form-control(name="tags",placeholder=" separate with commas")
-                    br
-                    div.input-group.col-md-12
-                        label.input-group-addon exam
-                        input.form-control(name="exam",placeholder='ex: 15cs40 ')
                     br
                     div.text-right
                         input.btn.btn-primary(type="submit",value="publish")

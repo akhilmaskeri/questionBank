@@ -3,7 +3,7 @@ extends layout
 block content
     nav.navbar.navbar-fixed-top.navbar-inverse
         div.container
-            a(href="/").navbar-brand Question bank database
+            a(href="/").navbar-brand Question bank
             ul.nav.navbar-nav.navbar-right
                 li
                     a(href='/') home
@@ -15,17 +15,25 @@ block content
                     a(href='#') [ #{user} ]
 
     div.container.content
-        div.question #{data['0']['q_str']}
-        div.answer #{data['0']['ans_str']}
 
-        hr
+        if answerAdded == true
+            p.alert.alert-success answer successfully added
 
-        if appeared.length > 0
-            h5.text-left appeared in 
-            for e in appeared
-                span.concept #{e}
-        hr
         div
-            p.text-center published by 
-                b #{data['0']['fname']+' '+data['0']['lname']} 
+            h3(style='color:#666;') #{question[0]['q_str']}
+            a(href=`writeAnswer?q_id=${encodeURI(question[0]['q_id'])}&q_str=${encodeURI(question[0]['q_str'])}`) write an answer
         hr
+        if answers && answers.length > 0
+            
+            div 
+                h4 Answers
+                br
+                div
+                    for ans in answers
+                        div.answer
+                            p(style='font-size:105%;color:#666;') #{ans['ans_str']}
+                            p.text-right by 
+                                a(href=`/userPreview?id=${encodeURI(ans['u_id'])}`) #{ans['fname']} #{ans['lname']}
+                        br
+        else
+            h5 waw such an empty !!

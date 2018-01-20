@@ -24,45 +24,52 @@
     background-color:#efefef;
     margin-right:5px;
     padding:4px;
-    border-style: solid;
-    border-width: .2px;
-    border-color:#aaa;
+    border: .2px solid #aaa;
 }
 .content{
-    margin-top:80px;
+    margin-top:70px;
 }
 #search-btn{
     color:#000;
 }
-.exam-holder{
-    margin-top:10px;
-}
-.exam{
-    padding:3px 3px 3px 3px;
-    margin:0 10px 0 0px;
-    background-color:#ddd;
-}
 #search-bar{
-    margin: 50px 0 50px 0;
+    margin: 0px 0 50px 0;
     padding-bottom:50px;
 }
 
 /* display all question */
-.question{
-    font-weight:bold;
-    font-size:120%;
+#questions{
+    margin: 10px;
+    border: .7px solid #aaa;
 }
-
-.question a{
-    color:#333;
+#concepts{
+    margin: 10px;
+    border: .7px solid #aaa;
+}
+#profiles{
+    margin: 10px;
+    border: .7px solid #aaa;
 }
 /* addQuestion */
 #answer{
     height:200px;
 }
 
-/* create user */
-#create-user{
+#controls{
+    border-left:.5px solid #eee;
+    padding: 15px;
+}
+.profile-name{
+    text-transform: capitalize;
 }
 
+a:hover{
+    text-decoration: none;
+}
 
+.answer{
+    width: 70%;
+    padding: 10px;
+    border: 0.5px solid #ddd;
+    text-indent: 15px;
+}

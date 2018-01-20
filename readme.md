@@ -1,4 +1,21 @@
-#### qb is a simple database project made with
+# project ~ question bank
+this is an effort to make a clone of stackoverflow for academics
 
+progress :
 
-<small>**express js** and **postgres sql** <small>
+- [X] registration / log in
+- [X] search / results
+- [X] follow interests
+- [X] follow people
+- [X] ask question
+- [X] write answer
+- [ ] create questionnaire
+- [ ] vote 
+- [ ] comment
+- [ ] feed
+- [ ] topics you may like
+- [ ] people you may know
+
+other:
+
+- [ ] add schema image
