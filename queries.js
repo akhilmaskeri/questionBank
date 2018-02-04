@@ -27,6 +27,10 @@ module.exports = {
     followConcept : followConcept,
     unfollowConcept : unfollowConcept,
 
+    upvote : upvote,
+
+    getComments : getComments,
+
     previewUser : previewUser,
     followProfile : followProfile,
     unfollowProfile : unfollowProfile,
@@ -133,15 +137,28 @@ function addAnswer(req,res,next){
     });
 }
 
-
+// from get details
 function getAnswers(req,res,next){
 
+    // answer string
     var query=`select ans_id,ans_str,u_id,fname,lname from answers a,users where a.q_id=${req.query.q_id} and ans_auth=u_id order by ans_date;`;
     db.any(query)
     .then(function(answer){
+        // question string
         db.any(`select q_id,q_str,q_auth,pub_date from questions where q_id=${req.query.q_id}`)
         .then(function(question){
-            res.render('answer',{user:req.session.user,answers:answer,question:question}); 
+
+            // [ ] number of upvotes and downvotes for question
+            
+            // value , count , case
+            db.any(`select value,count(value),case when exists (select * from vote where target_q=${req.query.q_id} and vote_by=${req.session.u_id}) then '1' else '0' end from vote where target_q=${req.query.q_id} group by value;`)
+            .then(function(data){
+                res.render('answer',{user:req.session.user,answers:answer,question:question,vote:data}); 
+            })
+            .catch(function(err){
+                next(err);
+            });
+            
         })
         .catch(function(err){
             next(err)
@@ -154,6 +171,11 @@ function getAnswers(req,res,next){
 
 }
 
+// comments
+function getComments(req,res,next){
+
+
+}
 
 
 // search functions
@@ -240,9 +262,51 @@ function unfollowConcept(req,res,next){
         res.redirect('/alltopics');    
     })
     .catch(function(err){
-        res.send('error while unfollowing concept <br/>'+err);
+        res.send('error while unfollowing concept <br/>'+err);  
     });
 }
+
+// vote
+function upvote(req,res,next){
+    
+    var query="";
+    if(req.query.q_id != null){
+        query = `insert into vote (target_q,value,vote_by) values (${req.query.q_id},cast(${req.query.value} as bit),${req.session.u_id})`;
+    }
+    if(req.query.ans_id != null){
+        query = `insert into vote (target_ans,value,vote_by) values (${req.query.ans_id},cast(${req.query.value} as bit),${req.session.u_id})`;
+    }
+
+    db.any(query)
+    .then(function(data){
+        res.redirect(`/getDetails?q_id=${req.query.q_id}`);
+    })
+    .catch(function(err){
+        next(err);
+    });
+}
+
+function downvote(req,res,next){
+    
+    var query="";
+    if(req.query.q_id != null){
+        query = `delete from vote where vote_by=${req.session.u_id} and target_q=${req.query.q_id}`;
+    }
+    if(req.query.ans_id != null){
+        query = `delete from vote where vote_by=${req.session.u_id} and target_ans=${req.query.ans_id}`;
+    }
+
+    db.any(query)
+    .then(function(data){
+        res.redirect(`/getDetails?q_id=${req.query.q_id}`);
+    })
+    .catch(function(err){
+        next(err);
+    });
+}
+
+
+
 
 function previewUser(req,res,next){
     

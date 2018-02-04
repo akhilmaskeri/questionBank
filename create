@@ -9,6 +9,8 @@ CREATE TABLE "users" (
   OIDS=FALSE
 );
 
+
+
 CREATE TABLE "questions" (
 	"q_id" serial NOT NULL,
 	"q_str" TEXT NOT NULL,
@@ -19,6 +21,8 @@ CREATE TABLE "questions" (
   OIDS=FALSE
 );
 
+
+
 CREATE TABLE "concept" (
 	"c_id" serial NOT NULL,
 	"c_str" varchar(64) NOT NULL,
@@ -27,12 +31,16 @@ CREATE TABLE "concept" (
   OIDS=FALSE
 );
 
+
+
 CREATE TABLE "tag" (
 	"q_id" bigint NOT NULL,
-	"c_id" bigint NOT NULL
+	"c_id" bigint NOT NULL,
+	CONSTRAINT tag_pk PRIMARY KEY ("q_id","c_id")
 ) WITH (
   OIDS=FALSE
 );
+
 
 
 CREATE TABLE "answers" (
@@ -46,41 +54,50 @@ CREATE TABLE "answers" (
   OIDS=FALSE
 );
 
+
+
 CREATE TABLE "comment" (
-	"target_q" bigint NOT NULL,
+	"target_q" bigint,
 	"target_ans" bigint NOT NULL,
-	"cmt_auth" bigint NOT NULL,
+	"cmt_auth" bigint,
 	"cmt_date" DATE NOT NULL,
 	"cmt_id" serial NOT NULL,
-	"target_cmt" bigint NOT NULL,
+	"target_cmt" bigint,
 	CONSTRAINT comment_pk PRIMARY KEY ("cmt_id")
 ) WITH (
   OIDS=FALSE
 );
 
+
+
 CREATE TABLE "vote" (
-	"target_q" bigint NOT NULL,
-	"target_ans" bigint NOT NULL,
+	"target_q" bigint,
+	"target_ans" bigint,
 	"value" bit NOT NULL,
 	"vote_by" bigint NOT NULL
 ) WITH (
   OIDS=FALSE
 );
 
+
+
 CREATE TABLE "follows" (
 	"user_id" bigint NOT NULL,
-	"follows" bigint NOT NULL
+	"follows" bigint NOT NULL,
+	CONSTRAINT follows_pk PRIMARY KEY ("user_id","follows")
 ) WITH (
   OIDS=FALSE
 );
+
+
 
 CREATE TABLE "intrested_in" (
 	"concept" bigint NOT NULL,
-	"user_id" bigint NOT NULL
+	"user_id" bigint NOT NULL,
+	CONSTRAINT intrested_in_pk PRIMARY KEY ("concept","user_id")
 ) WITH (
   OIDS=FALSE
 );
-
 
 ALTER TABLE "questions" ADD CONSTRAINT "questions_fk0" FOREIGN KEY ("q_auth") REFERENCES "users"("u_id") on delete set null;
 

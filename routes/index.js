@@ -25,6 +25,7 @@ router.get('/logout',function(req,res,next){
     }
 });
 
+
 router.get('/edit',function(req,res,next){
     if(req.session.user)
         return db.getCurrentUserQuestions(req,res,next);
@@ -101,6 +102,29 @@ router.get('/followProfile',function(req,res,next){
 router.get('/unfollowProfile',function(req,res,next){
     if(req.session.user){
         return db.unfollowProfile(req,res,next);
+    }
+    else res.render('login');
+});
+
+//vote
+router.get('/upvote',function(req,res,next){
+    if(req.session.user){
+        return db.upvote(req,res,next);
+    }
+    else res.render('login');
+});
+
+router.get('/downvote',function(req,res,next){
+    if(req.session.user){
+        return db.downvote(req,res,next);
+    }
+    else res.render('login');
+});
+
+// comments
+router.get('/getComments',function(req,res,next){
+    if(req.session.user){
+        return db.getComments(req,res,next);
     }
     else res.render('login');
 });

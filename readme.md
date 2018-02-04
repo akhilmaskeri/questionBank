@@ -1,7 +1,7 @@
 # project ~ question bank
 this is an effort to make a clone of stackoverflow for academics
 
-progress :
+backend :
 
 - [X] registration / log in
 - [X] search / results
@@ -10,12 +10,6 @@ progress :
 - [X] ask question
 - [X] write answer
 - [ ] create questionnaire
-- [ ] vote 
-- [ ] comment
+- [X] vote 
+- [X] comment
 - [ ] feed
-- [ ] topics you may like
-- [ ] people you may know
-
-other:
-
-- [ ] add schema image

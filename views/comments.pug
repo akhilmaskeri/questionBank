@@ -1,0 +1,19 @@
+extends layout
+
+block content
+    nav.navbar.navbar-fixed-top.navbar-inverse
+        div.container
+            a(href="/").navbar-brand Question bank
+            ul.nav.navbar-nav.navbar-right
+                li
+                    a(href='/') home
+                li
+                    a(href='/addQuestion') publish
+                li
+                    a(href='/help') how to
+                li
+                    a(href='#') [ #{user} ]
+
+    div.container.content
+
+        h3 comments
