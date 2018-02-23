@@ -129,8 +129,8 @@ create or replace function addQuestion(pubid bigint,q_str text,tgs text)
 returns void as $BODY$
 declare
     nxt_q_id bigint;
-    eid int;
     cid int;
+		new_concept varchar(64);
     arr varchar(64)[];
     cds varchar(32)[];
     indx int;
@@ -144,7 +144,8 @@ begin
     arr := string_to_array(tgs,' ');
     size := array_upper(arr,1);
     for indx in 1..size loop
-        insert into concept(c_str) values(arr[indx]);
+					
+		    insert into concept(c_str) select arr[indx] where not exists (select * from concept where c_str = arr[indx] );
         select c_id into cid from concept where c_str=arr[indx];
         insert into tag(q_id,c_id) values(nxt_q_id,cid);
     end loop;
@@ -152,9 +153,40 @@ begin
 end $BODY$
 language plpgsql;
 
+
+
+create or replace function updateQuestion(q_id bigint,q_str text,tgs text)
+returns void as $BODY$
+declare
+    nxt_q_id bigint;
+    cid int;
+		new_concept varchar(64);
+    arr varchar(64)[];
+    cds varchar(32)[];
+    indx int;
+    size int;
+    size_cds int;
+begin
+
+    nxt_q_id := nextval('questions_q_id_seq');
+    
+		update questions set q_str = q_str where q_id = q_id;
+
+    arr := string_to_array(tgs,' ');
+    size := array_upper(arr,1);
+    for indx in 1..size loop
+
+		    insert into concept(c_str) select arr[indx] where not exists (select * from concept where c_str = arr[indx] );
+        select c_id into cid from concept where c_str=arr[indx];
+        insert into tag(q_id,c_id) values(nxt_q_id,cid);
+
+	      // if tags were deleted * then handle 
+
+		end loop;
+
+end $BODY$
+language plpgsql;
+
+
 //drop
-
-
-
-
 drop function addquestion(bigint,text,text);

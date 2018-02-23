@@ -8,322 +8,260 @@ var options = {
 var pgp = require('pg-promise')(options);
 var db = pgp('postgres://localhost:5432/questionbank');
 
+
 module.exports = {
-    register : registerUser,
+
+    register : register,
     login : login,
+    deleteUser : deleteUser,
 
-    home : home,
-
-    search : search,
-    
     addQuestion : addQuestion,
     deleteQuestion : deleteQuestion,
-    getAnswers : getAnswers,
+    voteQuestion : voteQuestion,
+    unvoteQuestion : unvoteQuestion,
+
     addAnswer : addAnswer,
-    
-    getCurrentUserQuestions : getCurrentUserQuestions,
-    getAllTopics : getAllTopics,
-    
-    followConcept : followConcept,
-    unfollowConcept : unfollowConcept,
+    deleteAnswer : deleteAnswer,
+    voteAnswer : voteAnswer,
+    unvoteAnswer : unvoteAnswer,
 
-    upvote : upvote,
-
-    getComments : getComments,
-
-    previewUser : previewUser,
     followProfile : followProfile,
     unfollowProfile : unfollowProfile,
-}
 
+    followConcept : followConcept,
+    unfollowConcept : unfollowConcept,
+};
 
-//  - [ ] sanitization of data
+/* user */
+function register(req,res){
 
-// user functions
-function registerUser(req,res,next){
+    var check_for_already_existing= `select count(*) from users where email='${req.body.email}'`;
+    var insert_user = `insert into users(fname,lname,email,password) values ('${req.body.fname}','${req.body.lname}','${req.body.email}','${req.body.password}')`;
 
-    db.any(`select count(*) from users where email='${req.body.email}'`)
-        .then(function(data){
-            if(data['0']['count']!='0'){
-                res.render('signin',{failed:true});
-            }
-            else{
-                db.any(`insert into users(fname,lname,email,password) values ('${req.body.fname}','${req.body.lname}','${req.body.email}','${req.body.password}')`)
-                .then(function(data){
-                    res.redirect('/users/login');
-                })
-                .catch(function(err){
-                    return next(err);
-                });
-            }
-        })
-        .catch(function(err){
-            return next(err);
-        });
-    
-}
-    
-function login(req,res,next){
-
-    var queryString =  `select u_id,fname,password from users where email='${req.body.email}'`
-
-    db.any(queryString)
+    db.any(check_for_already_existing)
     .then(function(data){
-        if(data.length == 1 && req.body.password == data['0']['password'] ){
-            
-            req.session.u_id = data['0']['u_id'];
-            req.session.user = data['0']['fname'];
 
-            res.redirect('/');
+        if(data['0']['count']!='0'){
+            res.send("account already existing");
         }
         else{
-            res.render('login',{failed:true});
+            db.any(insert_user)
+            .then(function(data){
+                res.send("account succesfully registered");
+            })
+            .catch(function(err){
+                res.send(err);
+            });
+        }
+    })
+    .catch(function(err){
+        res.send(err);
+    });
+    
+}
+
+function login(req,res){
+
+    var check_user_exists =  `select u_id,fname,password from users where email='${req.body.email}'`
+
+    db.any(check_user_exists)
+    .then(function(data){
+
+        if(data.length == 1 && req.body.password == data['0']['password'] ){            
+            req.session.u_id = data['0']['u_id'];
+            req.session.user = data['0']['fname'];
+            res.send("true");
+        }
+        else{
+            res.send("false");
         }
     })
     .catch(function(err){
         return next(err);
     });
-
 }
 
-function home(req,res,next){
+function deleteUser(req,res){
 
-    db.any(`select c_str from concept , intrested_in where user_id=${req.session.u_id} and concept=c_id limit 10`)
-    .then(function(interest){
-       
-        db.any(`select fname,lname from users,follows where user_id='${req.session.u_id}' and u_id=follows;`)
-        .then(function(data){
-            res.render('home',{ user : req.session.user , interests : interest , following : data });
-        })
-        .catch(function(err){
-            next(err);
-        });
-
+    var delete_user = `delete from users where u_id = ${req.session.u_id}`;
+    db.any(delete_user)
+    .then(function(data){
+        req.session.destroy(function(err){ res.send(err) });
+        res.send('successfully deleted');
     })
     .catch(function(err){
-        res.send(err);
+        res.send('failed');
     });
 
 }
 
-// ask question
-function addQuestion(req,res,next){
+/* questions */
+function addQuestion(req,res){
 
-    if(req.session.user){
+    db.any(`select addQuestion(${req.session.u_id},'${req.body.q_str.trim()}','${req.body.tags.trim()}');`)
+    .then(function(data){
+        res.send("Question successfully added");
+    })
+    .catch(function(err){
+        res.send('failed to add question '+err);
+    });
 
-        db.any(`select addQuestion(${req.session.u_id},'${req.body.q_str.trim()}','${req.body.tags.trim()}');`)
-        .then(function(data){
-            res.render('publish',{user:req.session.user,added:true});
-        })
-        .catch(function(err){
-            res.send('error while publishing <br/>'+err)
-        })
-    }
-    else
-        res.redirect('/login');
 }
 
-// answer question
-function addAnswer(req,res,next){
+function deleteQuestion(req,res){
+
+    // delete only if the q_auth = req.session.u_id
+    var check_if_user_is_authorized = `select * from questions where q_id = ${req.body.q_id} and q_auth = ${req.session.u_id}`;
+    db.any(check_if_user_is_authorized)
+    .then(function(data){
+        
+        if(data.length > 0){
+
+            var delete_question = `delete from questions where q_id = ${req.body.q_id} and q_auth = ${req.session.u_id}`;
+            db.any(delete_question)
+            .then(function(data){
+                res.send("successfully deleted");
+            })
+            .catch(function(err){
+                res.send("failed to delete question "+err);
+            });
+
+        }
+        
+        // if the user has no such q_id to delete
+        res.send("unauthorized to delete the question")
+
+    })
+    .catch(function(err){
+        res.send("unauthorized to delete question");
+    });
+
+}
+
+/* TODO : update question */
+
+function voteQuestion(req,res){
+    
+    var query="";
+
+    if(req.query.q_id != null){
+        query = `insert into vote (target_q,value,vote_by) values (${req.query.q_id},cast(${req.query.value} as bit),${req.session.u_id})`;
+    }
+    
+    db.any(query)
+    .then(function(data){
+        res.send(data);
+    })
+    .catch(function(err){
+        res.send("unable to vote "+query+" "+err);
+    });
+}
+
+function unvoteAnswer(req,res){
+
+    var query = "";
+
+    if(req.query.q_id != null){
+        query = `delete from vote where vote_by = ${req.session.u_id} and target_q = ${req.query.q_id}`;
+    }
+
+    db.any(query)
+    .then(function(data){
+        res.send(data);
+    })
+    .catch(function(err){
+        res.send("unable to un vote "+err);
+    });
+
+}
+
+/* answers */
+function addAnswer(req,res){
 
     var query = `insert into answers (q_id,ans_str,ans_date,ans_auth) values (${req.body.q_id},'${req.body.ans_str.trim()}',now(),${req.session.u_id})`;
     db.any(query)
     .then(function(data){
-        req.query.q_id = req.body.q_id;
-        return getAnswers(req,res,next);
+        res.send("successfully added answer");
     })
     .catch(function(err){
-        next(err)
+        res.send("failed to add answer");
     });
+
 }
 
-// from get details
-function getAnswers(req,res,next){
+function deleteAnswer(req,res){
 
-    // answer string
-    var query=`select ans_id,ans_str,u_id,fname,lname from answers a,users where a.q_id=${req.query.q_id} and ans_auth=u_id order by ans_date;`;
-    db.any(query)
-    .then(function(answer){
-        // question string
-        db.any(`select q_id,q_str,q_auth,pub_date from questions where q_id=${req.query.q_id}`)
-        .then(function(question){
+    var  check_if_user_is_authorized = `select * from answers where ans_auth = ${req.session.u_id} and ans_id = ${req.body.ans_id} `;
 
-            // [ ] number of upvotes and downvotes for question
-            
-            // value , count , case
-            db.any(`select value,count(value),case when exists (select * from vote where target_q=${req.query.q_id} and vote_by=${req.session.u_id}) then '1' else '0' end from vote where target_q=${req.query.q_id} group by value;`)
+    db.query(check_if_user_is_authorized)
+    .then(function(data){
+        if(data.length > 0 ){
+
+            var delete_answer = `delete from answers where ans_id = ${req.body.ans_id}`;
+            db.any(delete_answer)
             .then(function(data){
-                res.render('answer',{user:req.session.user,answers:answer,question:question,vote:data}); 
+                res.send("successfully deleted ");
             })
             .catch(function(err){
-                next(err);
-            });
-            
-        })
-        .catch(function(err){
-            next(err)
-        });
-       
+                res.send("failed to delete the answer "+err);
+            })    
+        }   
+        else{
+            res.send("unauthorized to delete answer "+err)
+        }
+
     })
     .catch(function(err){
-        next(err);
+        res.send("unauthorized to delete answer; you havent answered this question")
     });
 
 }
 
-// comments
-function getComments(req,res,next){
 
-
-}
-
-
-// search functions
-
-function search(req,res,next){
-
-    var getSimilarConcept = `select c_id,c_str,case when c_id in (select concept from intrested_in where user_id=${req.session.u_id}) then 1 else 0 end from concept where c_str like '%${req.query.search}%'`;
-    var getSimilarUsers = `select u_id,fname,lname from users where fname like '${req.query.search}';`;
-    var getSimilarQuestions = `select q.q_id, q.q_str from questions q where q_str like '%${req.query.search}%';`;
-
-    db.any(getSimilarConcept)
-    .then(function(concept){
-        
-        db.any(getSimilarUsers)
-        .then(function(profile){
-        
-            db.any(getSimilarQuestions)
-            .then(function(question){
-                res.render('result',{user:req.session.user,searchStr:req.query.search,concepts:concept,profiles:profile,questions:question});
-            })
-            .catch(function(err){
-                next(err);
-            });
-
-        })
-        .catch(function(err){
-            next(err);
-        });
-    })
-    .catch(function(err){
-        next(err);
-    });
-
-}
-
-function getCurrentUserQuestions(req,res,next){
-
-    db.any(`select q_id,q_str from questions where q_auth=${req.session.u_id}`)
-    .then(function(data){
-        res.render('edit',{user:req.session.user,data:data});
-    })
-    .catch(function(err){
-        res.send("error while fetching data <br/>"+err);
-    });
-
-}
-
-function deleteQuestion(req,res,next){
-
-    db.any(`delete from questions where q_id=${req.query.qid}`)
-    .then(function(data){
-        res.redirect('/edit');
-    })
-    .catch(function(err){
-        res.send("error while deleting the question <br/>"+err);
-    });
-
-}
-
-function getAllTopics(req,res,next){
-    db.any(`select c_id,c_str,case when c_id in (select concept from intrested_in where user_id=${req.session.u_id}) then 1 else 0 end from concept`)
-    .then(function(data){
-        console.log(data.length)
-        res.render('topics',{user:req.session.user , data:data})
-    })
-    .catch(function(err){
-        res.send(err);
-    });
-}
-
-function followConcept(req,res,next){
-    db.any(`insert into intrested_in values ('${req.query.t}','${req.session.u_id}')`)
-    .then(function(data){
-        res.redirect('/alltopics');    
-    })
-    .catch(function(err){
-        res.send('error while following concept <br/>'+err);
-    });
-}
-
-function unfollowConcept(req,res,next){
-    db.any(`delete from intrested_in where user_id=${req.session.u_id} and concept=${req.query.t}`)
-    .then(function(data){
-        res.redirect('/alltopics');    
-    })
-    .catch(function(err){
-        res.send('error while unfollowing concept <br/>'+err);  
-    });
-}
-
-// vote
-function upvote(req,res,next){
+function voteAnswer(req,res){
     
     var query="";
-    if(req.query.q_id != null){
-        query = `insert into vote (target_q,value,vote_by) values (${req.query.q_id},cast(${req.query.value} as bit),${req.session.u_id})`;
-    }
+
     if(req.query.ans_id != null){
         query = `insert into vote (target_ans,value,vote_by) values (${req.query.ans_id},cast(${req.query.value} as bit),${req.session.u_id})`;
     }
-
+    
     db.any(query)
     .then(function(data){
-        res.redirect(`/getDetails?q_id=${req.query.q_id}`);
+        res.send(data);
     })
     .catch(function(err){
-        next(err);
+        res.send("unable to vote "+err);
     });
 }
 
-function downvote(req,res,next){
-    
-    var query="";
-    if(req.query.q_id != null){
-        query = `delete from vote where vote_by=${req.session.u_id} and target_q=${req.query.q_id}`;
-    }
+function unvoteAnswer(req,res){
+
+    var query = "";
+
     if(req.query.ans_id != null){
-        query = `delete from vote where vote_by=${req.session.u_id} and target_ans=${req.query.ans_id}`;
+        query = `delete from vote where vote_by = ${req.session.u_id} and target_ans = ${req.query.ans_id}`;
     }
 
     db.any(query)
     .then(function(data){
-        res.redirect(`/getDetails?q_id=${req.query.q_id}`);
+        res.send(data);
     })
     .catch(function(err){
-        next(err);
+        res.send("unable to un vote "+err);
     });
+
 }
 
 
 
-
-function previewUser(req,res,next){
-    
-    db.any(`select u_id,fname,lname,case when exists (select * from follows where user_id=${req.session.u_id} and follows='${req.query.id}')then '1' else '0' end from users where u_id ='${req.query.id}'`)
-    .then(function(users){
-        res.render('user',{user:req.session.user,profile:users[0]});
-    })
-    .catch(function(err){
-        next(err);
-    });
-}
+/* profile */
 
 function followProfile(req,res,next){
 
     db.any(`insert into follows values (${req.session.u_id},${req.query.id})`)
     .then(function(data){
-        previewUser(req,res,next);
+        return data;
     })
     .catch(function(err){
         next(err);
@@ -335,10 +273,98 @@ function unfollowProfile(req,res,next){
 
     db.any(`delete from follows where user_id=${req.session.u_id} and follows=${req.query.id} and not exists (select * from follows where user_id='${req.session.u_id}' and follows='${req.query.id}');`)
     .then(function(data){
-        previewUser(req,res,next);
+        return data;
     })
     .catch(function(err){
         next(err);
+    });
+
+}
+
+function followConcept(req,res){
+    db.any(`insert into intrested_in values ('${req.query.t}','${req.session.u_id}')`)
+    .then(function(data){
+        return data;
+    })
+    .catch(function(err){
+        res.send('error while following concept '+err);
+    });
+}
+
+function unfollowConcept(req,res){
+    db.any(`delete from intrested_in where user_id=${req.session.u_id} and concept=${req.query.t}`)
+    .then(function(data){
+        return data;
+    })
+    .catch(function(err){
+        res.send('error while unfollowing concept '+err);  
+    });
+}
+
+function search(req,res,next){
+
+    
+    
+    
+
+    db.any(getSimilarConcept)
+    .then(function(concept){
+        
+        db.any(getSimilarUsers)
+        .then(function(profile){
+        
+            db.any(getSimilarQuestions)
+            .then(function(question){
+                res.send(question);
+            })
+            .catch(function(err){
+                next(err);
+            });
+
+        })
+        .catch(function(err){
+            next(err);
+        });
+    })
+    
+
+}
+
+function searchConcepts(req,res){
+    var getSimilarConcept = `select c_id,c_str,case when c_id in (select concept from intrested_in where user_id=${req.session.u_id}) then 1 else 0 end from concept where c_str like '%${req.query.search}%'`;
+
+    db.any(getSimilarConcept)
+    .then(function(concept){
+        return concept;
+    })
+    .catch(function(err){
+        return err;
+    });
+}
+
+function searchUsers(req,res){
+
+    var getSimilarUsers = `select u_id,fname,lname from users where fname like '${req.query.search}';`;
+
+    db.any(getSimilarUsers)
+    .then(function(users){
+        return users;
+    })
+    .catch(function(err){
+        return err;
+    });
+}
+
+function searchQuestions(req,res){
+
+    var getSimilarQuestions = `select q.q_id, q.q_str from questions q where q_str like '%${req.query.search}%';`;
+
+    db.any(getSimilarQuestions)
+    .then(function(questions){
+        return questions;
+    })
+    .catch(function(err){
+        return err;
     });
 
 }

@@ -3,142 +3,190 @@ var router = express.Router();
 
 var db = require('../queries')
 
-/* GET home page. */
-router.get('/', function(req, res, next) {
-    if(req.session.user){
-        db.home(req,res,next);
-    }
-    else res.render('login');
+router.post('/register',function(req,res){
+
+    // req.body.fname
+    // req.body.lname
+    // req.body.email
+    // req.body.password
+
+    return db.register(req,res);
+
+
 });
 
-router.post('/login',function(req,res,next){
-    return db.login(req,res,next);
-});
+router.post('/login', function(req,res){
 
-router.get('/logout',function(req,res,next){
-    if(req.session){
+    // req.body.email
+    // req.body.password
+
+    return db.login(req,res);
+
+} );
+
+router.get('/logout',function(req,res){
+
+    // only on login
+    if(req.session.u_id){
         req.session.destroy(function(err){
             if(err)
-                return next(err);
-            else res.redirect('/');
+                res.send(err);
+            else res.send("successfully session distroyed");
         });
     }
+
+});
+
+router.post('/deleteUser',function(req,res){
+
+    if(req.session.u_id){
+        // on successful deletion of user
+        // distroy the session
+        db.deleteUser(req,res);
+    }
+    else
+        res.send("403 unauthorized");
+
+});
+
+/* questions */
+router.post('/addQuestion',function(req,res){
+
+    // req.body.q_str
+    // req.body.tags
+
+    if(req.session.u_id){
+        db.addQuestion(req,res);
+    }
+    else
+        res.send("403 unauthorized");
+});
+
+router.post('/deleteQuestion',function(req,res){
+
+    // req.body.q_id
+
+    if(req.session.u_id){
+        db.deleteQuestion(req,res);
+    }
+    else
+        res.send("403 unauthorized");
+
 });
 
 
-router.get('/edit',function(req,res,next){
-    if(req.session.user)
-        return db.getCurrentUserQuestions(req,res,next);
-    else res.redirect('/');
+/* answer */
+router.post('/addAnswer',function(req,res){
+
+    // req.body.q_id
+    // req.body.ans_str
+
+    if(req.session.u_id){
+        db.addAnswer(req,res);
+    }
+    else
+        res.send("403 unauthorized");
+
 });
 
-router.get('/delete',function(req,res,next){
+router.post('/deleteAnswer',function(req,res){
 
-     if(req.session.user)
-         return db.deleteQuestion(req,res,next);
-     else res.redirect('/');
+    // req.body.ans_id
+
+    if(req.session.u_id){
+        db.deleteAnswer(req,res);
+    }
+    else
+        res.send("403 unauthorized");
+
 });
 
-/* the insertion functions */
-router.get('/publish',function(req,res,next){
-    if(req.session.user)
-        res.render('publish',{user:req.session.user});
-    else res.redirect('/');
+
+/* vote */
+
+router.get('/upvote',function(req,res){
+
+    // req.query.q_id
+    // req.query.ans_id
+    // req.query.value
+
+    if(req.session.u_id){
+
+        if(req.query.q_id)
+            db.voteQuestion(req,res);
+        else if(req.query.ans_id)
+            db.voteAnswer(req,res);
+
+    }
+    else
+        res.send("403 unauthorized");
+
 });
 
-router.get('/help',function(req,res,next){
-    if(req.session.user)
-        res.render('help',{user:req.session.user});
-    else res.redirect('/');
-    
-});
+router.get('/unvote',function(req,res){
 
-/* search */
-router.get('/search',function(req,res,next){
+    // req.query.q_id 
+    // req.query.ans_id
 
-    if(req.session.user){
-        if(req.query.search.trim()=='')
-            res.render('home',{user:req.session.user});
-        else{
-            return db.search(req,res,next);
+    if(req.session.u_id){
+
+        if(req.query.q_id){
+            db.unvoteQuestion(req,res);
         }
+        else if(req.query.ans_id)
+            db.unvoteAnswer(req,res);
+    }    
+    else
+        res.send("403 unauthorized");
+
+});
+
+router.get('/followProfile',function(req,res){
+
+    // req.query.id
+
+    if(req.session.u_id){
+        db.followProfile(req,res);
     }
-    else res.render('login');    
+    else
+        res.send("403 unauthorized");
+
 });
 
-router.post('/addQuestion',db.addQuestion);
+router.get('/unfollowProfile',function(req,res){
 
-router.get('/getDetails',function(req,res,next){
-    if(req.session.user){
-        return db.getAnswers(req,res,next);
+    // req.query.id
+
+    if(req.session.u_id){
+        db.unfollowProfile(req,res);
     }
-    else res.render('login');    
+    else
+        res.send("403 unauthorized");
+
 });
 
-router.get('/writeAnswer',function(req,res,next){
-    if(req.session.user){
-        res.render('writeAnswer',{user:req.session.user,q_id:req.query.q_id,q_str:req.query.q_str});
+/* concept */
+
+router.get('/followConcept',function(req,res){
+
+    // req.query.t
+    if(req.session.u_id){
+        db.followConcept(req,res);
     }
-    else res.render('login');    
+    else
+        res.send("403 unautorized");
+
 });
 
-router.post('/addAnswer',db.addAnswer);
+router.get('/unfollowConcept',function(req,res){
 
-// user preview
-router.get('/userPreview',function(req,res,next){
-
-    if(req.session.user){
-        return db.previewUser(req,res,next);
+    // req.query.t
+    if(req.session.u_id){
+        db.unfollowConcept(req,res);
     }
-    else res.render('login');
-});
+    else
+        res.send("403 unautorized");
 
-router.get('/followProfile',function(req,res,next){
-    if(req.session.user){
-        return db.followProfile(req,res,next);
-    }
-    else res.render('login')
-});
-router.get('/unfollowProfile',function(req,res,next){
-    if(req.session.user){
-        return db.unfollowProfile(req,res,next);
-    }
-    else res.render('login');
-});
-
-//vote
-router.get('/upvote',function(req,res,next){
-    if(req.session.user){
-        return db.upvote(req,res,next);
-    }
-    else res.render('login');
-});
-
-router.get('/downvote',function(req,res,next){
-    if(req.session.user){
-        return db.downvote(req,res,next);
-    }
-    else res.render('login');
-});
-
-// comments
-router.get('/getComments',function(req,res,next){
-    if(req.session.user){
-        return db.getComments(req,res,next);
-    }
-    else res.render('login');
-});
-
-// concepts
-router.get('/alltopics',function(req,res,next){
-    return db.getAllTopics(req,res,next);
-});
-
-router.get('/followTopic',function(req,res,next){
-    return db.followConcept(req,res,next);
-});
-router.get('/unfollowTopic',function(req,res,next){
-    return db.unfollowConcept(req,res,next);
 });
 
 
